@@ -1,0 +1,149 @@
+{
+  "name": "PerilWarning",
+  "version": "0.7",
+  "steam_build": "26266538",
+  "runtime_verified": false,
+  "status": "F10 removed; four verified red/blue effect variants supported; combat verification pending",
+  "slow_motion": {
+    "multiplier": 0.75,
+    "source": "debugslomo",
+    "trigger": "actual red or blue action interval only",
+    "restore": "previous source value when all red/blue intervals end, or cancellation, pause, death, teardown"
+  },
+  "diagnostics": "ProjectSavedDir/PerilWarning.log",
+  "lead_game_seconds": 0.3,
+  "ends_at": "red/blue warning action timeline end; ability cancellation clears warning",
+  "glyph": "危",
+  "glyph_colors": {
+    "red": [
+      1,
+      0.025,
+      0.015,
+      1
+    ],
+    "blue": [
+      0.025,
+      0.35,
+      1,
+      1
+    ],
+    "overlap_priority": "red"
+  },
+  "font": "ZH_ZiKuTangKuangShanKaiShuJF_Font",
+  "font_size": 150,
+  "screen_anchor": [
+    0.5,
+    0.34
+  ],
+  "max_enemy_distance_cm": 2500,
+  "tick_ms": 16,
+  "actor_refresh_ms": 250,
+  "preview_key": null,
+  "short_windup_policy": "warn as soon as the active timeline can be observed; do not delay enemy attacks",
+  "scope": "Hostile living PBZCharacter_NPC within 2500cm, active LegoAbility timelines and common WeaponParticle_BlueRedEye action with one of four exact effects",
+  "supported_effects": [
+    "NS_AttackAlert_Red_001",
+    "NS_AttackAlert_Red_004",
+    "NS_AttackAlert_Blue_001",
+    "NS_AttackAlert_Blue_002"
+  ],
+  "installation_directory": "ProjectPBZ/Content/Paks/~mods/PerilWarning",
+  "archive_install_root": "game root",
+  "source_sha256": {
+    "ProjectPBZ/Content/JavaScript/Gameplay/BossCombatRecorder.js": "7002ea28f63c696824ecdc7bf7bbabd6a5156477287f0fdf11fa5edddc4766d6"
+  },
+  "script_sha256": {
+    "ProjectPBZ/Content/JavaScript/Gameplay/BossCombatRecorder.js": "2f5cea39ef2532d1763986f2c5e486f881e68ac943ff13e07b182f53989b11c6",
+    "ProjectPBZ/Content/JavaScript/Mods/PBZPerilWarning.js": "f29d396cce27100647e82c796d4a50b61a5dfdd596518bc8b11a5ab031720368"
+  },
+  "package_sha256": {
+    "zzz_PBZ_PerilWarning_999_P.pak": "82610da5a14cb38d7db53a6d5682aa8aa1ff4b357b442b6e5284bc1aa7065f64",
+    "zzz_PBZ_PerilWarning_999_P.utoc": "e8e33d0c68d14ae8918732bdeac598805216004640f5e0c25676c59453aac1ec",
+    "zzz_PBZ_PerilWarning_999_P.ucas": "5953a40f2e01c26668502c3fe150e2573ca24f41a2f394dd84b2b0a04104ea2d"
+  },
+  "conflict_checks": {
+    "AccessorySlots": "no warning-script path collision",
+    "AutoRegen": "no warning-script path collision",
+    "BonusItems": "no warning-script path collision",
+    "BossStaggerExecution": "no warning-script path collision",
+    "CharacterSwitch": "no warning-script path collision",
+    "ClothingConverterSupport": "no warning-script path collision",
+    "CorsairAppearance": "no warning-script path collision",
+    "DancePlayer": "no warning-script path collision",
+    "DodgeInvincibility": "no warning-script path collision",
+    "FangYaoAppearance": "no warning-script path collision",
+    "FangYaoModifiedAppearance": "no warning-script path collision",
+    "FoxRainAppearance": "no warning-script path collision",
+    "GoldenTigerAppearance": "no warning-script path collision",
+    "GuardEfficiency": "no warning-script path collision",
+    "HideBackDagger": "no warning-script path collision",
+    "HoldToSkip": "no warning-script path collision",
+    "HuanGuiGreenDressAppearance": "no warning-script path collision",
+    "HuanGuiUnderwearAppearance": "no warning-script path collision",
+    "MuXiaoKuiAppearance": "no warning-script path collision",
+    "NianSuiChangAppearance": "no warning-script path collision",
+    "Nightmare66": "no warning-script path collision",
+    "ObsessionDemonAppearance": "no warning-script path collision",
+    "OutFit_2B": "no warning-script path collision",
+    "PhotoMode": "no warning-script path collision",
+    "PortableBonfire": "no warning-script path collision",
+    "SilkCorsairAppearance": "no warning-script path collision",
+    "ToadChiefAppearance": "no warning-script path collision",
+    "ValbyAppearance": "no warning-script path collision",
+    "WuchangVoice": "no warning-script path collision",
+    "YenneferAppearance": "no warning-script path collision"
+  },
+  "validation": [
+    "32 behavioral/native-adapter scenarios including 480 resolved event replays",
+    "v0.6 fails new F10 regression",
+    "PAK exact two-script readback and packed-code regression",
+    "unchanged IoStore companions verified",
+    "current mounted script/target-asset collision check",
+    "ZIP full readback"
+  ],
+  "save_files_modified": false,
+  "sekiro_reference": "visual concept only; uses PBZ font, no Sekiro textures or code included",
+  "coverage_audit": {
+    "scanned": 9097,
+    "matched": 567,
+    "failed": 0,
+    "enemy_packages": 564,
+    "action_objects": 541,
+    "direct_events": 517,
+    "included_events": 516,
+    "excluded_events": 1,
+    "unlinked_actions": 24,
+    "effects": {
+      "NS_AttackAlert_Blue_001": 207,
+      "NS_AttackAlert_Red_004": 36,
+      "NS_AttackAlert_Red_001": 207,
+      "NS_ArrowMan_DuYan_Fire_ShootBurst_301": 1,
+      "NS_Troop_Howl_001": 4,
+      "NS_MBoss_Howl_001": 1,
+      "NS_DeathDissolve_001": 2,
+      "NS_AttackAlert_Blue_002": 30,
+      "NS_EMei_DashBody_001": 2,
+      "": 6,
+      "NS_ShieldHit_001_Normal": 2,
+      "NS_GroundsSlide_Small_001": 1,
+      "NS_ZuoShang_GroundHit_001": 1,
+      "NS_PinDaoPerfect_Wood_303": 1,
+      "NS_PinDaoPerfect_Wood_305": 1,
+      "NS_ShaQiEnd_001_Trail": 5,
+      "NS_PinDaoPerfect_003": 1,
+      "NS_PinDaoPerfect_005": 1,
+      "NS_LengTu_TroopAttack_Charge_601": 1,
+      "NS_FistAddict_PhaseTransition_101": 1,
+      "NS_FiseMan_Ice_GroundHit_101": 3,
+      "NS_BoomMan_GroundHit_001": 1,
+      "NS_LeiDang_SonicBurst_601": 1
+    },
+    "old_supported_events": 414,
+    "new_supported_events": 480,
+    "enemy_directories": 79,
+    "supported_enemy_directories": 79,
+    "newly_covered_enemy_directories": 19,
+    "newly_covered_events": 66,
+    "unlinked_alert_actions": 15
+  }
+}
