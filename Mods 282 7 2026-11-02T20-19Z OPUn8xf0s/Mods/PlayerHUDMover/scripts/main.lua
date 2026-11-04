@@ -300,6 +300,8 @@ end
 
 local FILL_Y = 0.45
 local YELLOW_R, YELLOW_G, YELLOW_B = 1, 0.78, 0.22
+-- Dark track drawn behind each fill so the lost part of HP / Sha-chi shows as a black gap.
+local TRACK_R, TRACK_G, TRACK_B, TRACK_A = 0, 0, 0, 0.65
 
 local function setRenderVec(w, fn, x, y)
     local ok = pcall(function()
@@ -314,17 +316,18 @@ local function setRenderVec(w, fn, x, y)
     return ok
 end
 
-local function makeRect(outer, name, r, g, b)
+local function makeRect(outer, name, r, g, b, a)
+    a = a or 1
     local ok, img = pcall(NewObject, "/Script/UMG.Image", outer, name)
     if not (ok and (img and img:IsValid())) then
         return nil
     end
     local okC = pcall(function()
-        img.ColorAndOpacity = { R = r, G = g, B = b, A = 1 }
+        img.ColorAndOpacity = { R = r, G = g, B = b, A = a }
     end)
     if not okC then
         pcall(function()
-            img:SetColorAndOpacity({ SpecifiedColor = { R = r, G = g, B = b, A = 1 } })
+            img:SetColorAndOpacity({ SpecifiedColor = { R = r, G = g, B = b, A = a } })
         end)
     end
     return img
@@ -342,8 +345,8 @@ local function addOverlayChild(panel, img)
     end)
 end
 
-local function makeFill(root, name, r, g, b, pivotY)
-    local rect = makeRect(root, name, r, g, b)
+local function makeFill(root, name, r, g, b, pivotY, a)
+    local rect = makeRect(root, name, r, g, b, a)
     if not (rect and rect:IsValid() and addOverlayChild(root, rect)) then
         return nil
     end
@@ -360,14 +363,31 @@ local function makeFill(root, name, r, g, b, pivotY)
 end
 
 
-local function getOrCreateFill(root, name, r, g, b, pivotY)
+local function findChild(root, name)
     local ok, w = pcall(function()
         return root:FindChildByName(name)
     end)
     if ok and w and w:IsValid() then
         return w
     end
-    return makeFill(root, name, r, g, b, pivotY)
+    return nil
+end
+
+local function getOrCreateFill(root, name, r, g, b, pivotY, a)
+    return findChild(root, name) or makeFill(root, name, r, g, b, pivotY, a)
+end
+
+local MOVER_WIDGETS = { "PBZMoverHPTrack", "PBZMoverShTrack", "PBZMoverHPFill", "PBZMoverShFill" }
+
+local function setMoverOpacity(root, opacity)
+    for _, name in ipairs(MOVER_WIDGETS) do
+        local w = findChild(root, name)
+        if w and w.RenderOpacity ~= opacity then
+            pcall(function()
+                w:SetRenderOpacity(opacity)
+            end)
+        end
+    end
 end
 
 local function readRatio(inst, prop)
@@ -482,6 +502,16 @@ local function doOneShot(reason)
 
         
         if hide then
+            -- Tracks must be created before the fills: later overlay children draw on top.
+            local hpTrack = getOrCreateFill(root, "PBZMoverHPTrack", TRACK_R, TRACK_G, TRACK_B, 0, TRACK_A)
+            if hpTrack then
+                setRenderVec(hpTrack, "SetRenderScale", 1, FILL_Y)
+            end
+            local shTrack = getOrCreateFill(root, "PBZMoverShTrack", TRACK_R, TRACK_G, TRACK_B, 1, TRACK_A)
+            if shTrack then
+                setRenderVec(shTrack, "SetRenderScale", 1, FILL_Y)
+            end
+            setMoverOpacity(root, 1)
             local hpRatio = clamp01(readRatio(entry.inst, "HPBarWhiteRatio"))
             local shRatio = clamp01(readRatio(entry.inst, "ShachiBarRatio"))
             local hpFill = getOrCreateFill(root, "PBZMoverHPFill", 1, 1, 1, 0)
@@ -492,6 +522,8 @@ local function doOneShot(reason)
             if shFill and shRatio then
                 setRenderVec(shFill, "SetRenderScale", shRatio, FILL_Y)
             end
+        else
+            setMoverOpacity(root, 0)
         end
     end
     appliedOnce = true
