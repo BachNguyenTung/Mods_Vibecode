@@ -5,5 +5,6 @@ return {
     scale = 2,
     key = "F8",
     hideFrame = true,
+    showBorder = true,
     lang = "zh",
 }
