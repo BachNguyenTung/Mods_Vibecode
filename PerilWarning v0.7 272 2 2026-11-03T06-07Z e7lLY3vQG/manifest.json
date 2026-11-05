@@ -1,6 +1,6 @@
 {
   "name": "PerilWarning",
-  "version": "0.7",
+  "version": "0.7.1",
   "steam_build": "26266538",
   "runtime_verified": false,
   "status": "F10 removed; four verified red/blue effect variants supported; combat verification pending",
@@ -54,10 +54,10 @@
   },
   "script_sha256": {
     "ProjectPBZ/Content/JavaScript/Gameplay/BossCombatRecorder.js": "2f5cea39ef2532d1763986f2c5e486f881e68ac943ff13e07b182f53989b11c6",
-    "ProjectPBZ/Content/JavaScript/Mods/PBZPerilWarning.js": "f29d396cce27100647e82c796d4a50b61a5dfdd596518bc8b11a5ab031720368"
+    "ProjectPBZ/Content/JavaScript/Mods/PBZPerilWarning.js": "f221dd79e73e1ef6dfd678dacff4d54890e0228a027624cd8a78bfb928d1d3fd"
   },
   "package_sha256": {
-    "zzz_PBZ_PerilWarning_999_P.pak": "82610da5a14cb38d7db53a6d5682aa8aa1ff4b357b442b6e5284bc1aa7065f64",
+    "zzz_PBZ_PerilWarning_999_P.pak": "97554c333886272bb32c6467234468178429f4178651d761df4e0114ab47086c",
     "zzz_PBZ_PerilWarning_999_P.utoc": "e8e33d0c68d14ae8918732bdeac598805216004640f5e0c25676c59453aac1ec",
     "zzz_PBZ_PerilWarning_999_P.ucas": "5953a40f2e01c26668502c3fe150e2573ca24f41a2f394dd84b2b0a04104ea2d"
   },
@@ -145,5 +145,6 @@
     "newly_covered_enemy_directories": 19,
     "newly_covered_events": 66,
     "unlinked_alert_actions": 15
-  }
+  },
+  "timeline_discovery_ms": 50
 }
