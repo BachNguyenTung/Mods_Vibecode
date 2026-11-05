@@ -24,8 +24,6 @@ local STR = {
         tip = "按面板按键打开本面板 (默认 F8, 可在设置页修改) · 应用立即生效(不保存) · 保存配置写入 config.lua",
         st_wait = "状态: 等待血条出现 / 点应用",
         chk_enabled = "启用功能 (enabled)",
-        chk_hideFrame = "隐藏原框并显示填充条 (hideFrame)",
-        chk_showBorder = "保留原版边框 (showBorder)",
         lbl_x = "横向 X (px)",
         lbl_y = "纵向 Y (0=默认)",
         lbl_scale = "缩放",
@@ -63,8 +61,6 @@ local STR = {
         tip = "Open this panel with the panel hotkey (default F8, changeable in Settings) · Apply takes effect immediately (not saved) · Save config writes config.lua",
         st_wait = "Status: waiting for HP bar / click Apply",
         chk_enabled = "Enabled (enabled)",
-        chk_hideFrame = "Hide original frame, show fill bars (hideFrame)",
-        chk_showBorder = "Keep the game's bar border (showBorder)",
         lbl_x = "Screen X (px)",
         lbl_y = "Screen Y (0 = default)",
         lbl_scale = "Scale",
@@ -229,7 +225,6 @@ end
 
 local function findLiveHPBarRoots(reason)
     local roots = {}
-    local t0 = os.clock()
     local ok, list = pcall(FindAllOf, "WB_PlayerHPBar_V1_C")
     if not ok or not list then
         return roots
@@ -242,228 +237,12 @@ local function findLiveHPBarRoots(reason)
             if full:find("Transient") then
                 local root = pickRoot(inst)
                 if root then
-                    roots[#roots + 1] = { root = root, name = full, inst = inst }
+                    roots[#roots + 1] = { root = root }
                 end
             end
         end
     end
     return roots
-end
-
-local function purePath(s)
-    if type(s) ~= "string" then
-        return ""
-    end
-    local p = s:match("^%S+%s(.*)$")
-    return p or s
-end
-
-
-local function resolveChildren(root, marker, items)
-    local out = {}
-    local missing = {}
-    for i = 1, #items do
-        local item = items[i]
-        local ok, w = pcall(function()
-            return root:FindChildByName(item.name)
-        end)
-        if ok and w and w:IsValid() then
-            out[item.key] = w
-        else
-            missing[#missing + 1] = item
-        end
-    end
-    if #missing > 0 then
-        local prefix = purePath(marker)
-        local want = {}
-        for i = 1, #missing do
-            want[missing[i].name] = missing[i].key
-        end
-        local ok2, list = pcall(FindAllOf, "Image")
-        if ok2 and list then
-            for i = 1, #list do
-                local w = list[i]
-                if w and w:IsValid() then
-                    local full = ""
-                    pcall(function() full = w:GetFullName() end)
-                    if full:find(prefix, 1, true) then
-                        local short = full:match("([^%.]+)$")
-                        local key = short and want[short]
-                        if key and not out[key] then
-                            out[key] = w
-                        end
-                    end
-                end
-            end
-        end
-    end
-    return out
-end
-
-local FILL_Y = 0.45
-local YELLOW_R, YELLOW_G, YELLOW_B = 1, 0.78, 0.22
--- With hideFrame on, the game's own bar backgrounds (Image_HpBG / Image_ShaChiBarBG) stay
--- visible but are tinted to this dark colour, so the lost part of HP / Sha-chi shows as a
--- black gap. They already sit behind the fills in the game's layout and match their size.
-local TRACK_COLOR = { R = 0, G = 0, B = 0, A = 0.65 }
--- How often the mover fills are re-scaled to the current HP / Sha-chi ratio.
-local FILL_UPDATE_MS = 100
-
-local function setRenderVec(w, fn, x, y)
-    local ok = pcall(function()
-        w[fn](w, { X = x, Y = y })
-    end)
-    if ok then
-        return true
-    end
-    ok = pcall(function()
-        w[fn](w, FVector2D.New(x, y))
-    end)
-    return ok
-end
-
-local function makeRect(outer, name, r, g, b, a)
-    a = a or 1
-    local ok, img = pcall(NewObject, "/Script/UMG.Image", outer, name)
-    if not (ok and (img and img:IsValid())) then
-        return nil
-    end
-    local okC = pcall(function()
-        img.ColorAndOpacity = { R = r, G = g, B = b, A = a }
-    end)
-    if not okC then
-        pcall(function()
-            img:SetColorAndOpacity({ SpecifiedColor = { R = r, G = g, B = b, A = a } })
-        end)
-    end
-    return img
-end
-
-local function addOverlayChild(panel, img)
-    local ok = pcall(function()
-        panel:AddChildToOverlay(img)
-    end)
-    if ok then
-        return true
-    end
-    return pcall(function()
-        panel:AddChild(img)
-    end)
-end
-
-local function makeFill(root, name, r, g, b, pivotY, a)
-    local rect = makeRect(root, name, r, g, b, a)
-    if not (rect and rect:IsValid() and addOverlayChild(root, rect)) then
-        return nil
-    end
-    setRenderVec(rect, "SetRenderTransformPivot", 0, pivotY)
-    local slot = rect.Slot
-    if slot and slot:IsValid() then
-        pcall(function()
-            slot.HorizontalAlignment = 1
-            slot.VerticalAlignment = 1
-        end)
-    end
-    setRenderVec(rect, "SetRenderScale", 0, FILL_Y)
-    return rect
-end
-
-
-local function findChild(root, name)
-    local ok, w = pcall(function()
-        return root:FindChildByName(name)
-    end)
-    if ok and w and w:IsValid() then
-        return w
-    end
-    return nil
-end
-
-local function getOrCreateFill(root, name, r, g, b, pivotY, a)
-    return findChild(root, name) or makeFill(root, name, r, g, b, pivotY, a)
-end
-
-local MOVER_WIDGETS = { "PBZMoverHPFill", "PBZMoverShFill" }
-
-local function readColor(img)
-    local ok, c = pcall(function()
-        local v = img.ColorAndOpacity
-        return { R = v.R, G = v.G, B = v.B, A = v.A }
-    end)
-    if ok and c and type(c.R) == "number" then
-        return c
-    end
-    return nil
-end
-
-local function setImageColor(img, c)
-    -- UImage::SetColorAndOpacity(FLinearColor) also refreshes the live Slate widget.
-    local ok = pcall(function()
-        img:SetColorAndOpacity(c)
-    end)
-    if not ok then
-        pcall(function()
-            img.ColorAndOpacity = c
-        end)
-    end
-end
-
-local bgOriginalColor = {}
-
--- hideFrame on: show the bar background tinted dark. Off: restore its original colour.
-local function applyTrack(img, asTrack)
-    local okN, key = pcall(function()
-        return img:GetFullName()
-    end)
-    if not okN then
-        return
-    end
-    if asTrack then
-        if not bgOriginalColor[key] then
-            bgOriginalColor[key] = readColor(img) or { R = 1, G = 1, B = 1, A = 1 }
-        end
-        setImageColor(img, TRACK_COLOR)
-    elseif bgOriginalColor[key] then
-        setImageColor(img, bgOriginalColor[key])
-        bgOriginalColor[key] = nil
-    end
-end
-
-local function setMoverOpacity(root, opacity)
-    for _, name in ipairs(MOVER_WIDGETS) do
-        local w = findChild(root, name)
-        if w and w.RenderOpacity ~= opacity then
-            pcall(function()
-                w:SetRenderOpacity(opacity)
-            end)
-        end
-    end
-end
-
-local function readRatio(inst, prop)
-    if not (inst and inst:IsValid()) then
-        return nil
-    end
-    local ok, v = pcall(function()
-        return inst[prop]
-    end)
-    if ok and type(v) == "number" then
-        return v
-    end
-    return nil
-end
-
-local function clamp01(v)
-    if type(v) ~= "number" then
-        return nil
-    end
-    if v < 0 then
-        return 0
-    end
-    if v > 1 then
-        return 1
-    end
-    return v
 end
 
 local function resetRootTransform(root)
@@ -486,26 +265,6 @@ local function resetRootTransform(root)
 end
 
 local appliedOnce = false
--- HP bars handled by the last doOneShot; fillLoop keeps their mover fills in sync.
-local liveBars = {}
-
--- Scale each mover fill to the current ratio so it shrinks with HP / Sha-chi and
--- uncovers the dark track. Only touches the widget when the ratio actually changed.
-local function updateFills()
-    for i = 1, #liveBars do
-        local e = liveBars[i]
-        for _, f in ipairs { { "hpFill", "HPBarWhiteRatio", "hpLast" }, { "shFill", "ShachiBarRatio", "shLast" } } do
-            local fill = e[f[1]]
-            if fill and fill:IsValid() then
-                local ratio = clamp01(readRatio(e.inst, f[2]))
-                if ratio and ratio ~= e[f[3]] and setRenderVec(fill, "SetRenderScale", ratio, FILL_Y) then
-                    e[f[3]] = ratio
-                end
-            end
-        end
-    end
-end
-
 
 local function doOneShot(reason)
     local roots = findLiveHPBarRoots(reason)
@@ -524,7 +283,6 @@ local function doOneShot(reason)
     local W, H = screenSize()
     local tx, ty = targetOffset(W, H)
     local sx, sy = scaleFromCfg()
-    local hide = cfg.hideFrame ~= false
 
     for i = 1, #roots do
         local entry = roots[i]
@@ -549,44 +307,7 @@ local function doOneShot(reason)
                 end)
             end
         end
-
-        
-        local kids = resolveChildren(root, entry.name, {
-            { key = "frame", name = "Image_OverallBG" },
-            { key = "hpBG", name = "Image_HpBG" },
-            { key = "shBG", name = "Image_ShaChiBarBG" },
-        })
-        -- The game's outer frame (Image_OverallBG) draws the bar border; hideFrame hides it
-        -- unless showBorder is on. The HP / Sha-chi backgrounds stay visible and become the
-        -- dark track behind the fills.
-        local hideBorder = hide and cfg.showBorder == false
-        for _, key in ipairs { "frame", "hpBG", "shBG" } do
-            local w = kids[key]
-            if w and w:IsValid() then
-                local target = (hideBorder and key == "frame") and 0 or 1
-                local cur = w.RenderOpacity
-                if type(cur) ~= "number" or cur ~= target then
-                    pcall(function()
-                        w:SetRenderOpacity(target)
-                    end)
-                end
-                if key ~= "frame" then
-                    applyTrack(w, hide)
-                end
-            end
-        end
-
-
-        if hide then
-            setMoverOpacity(root, 1)
-            entry.hpFill = getOrCreateFill(root, "PBZMoverHPFill", 1, 1, 1, 0)
-            entry.shFill = getOrCreateFill(root, "PBZMoverShFill", YELLOW_R, YELLOW_G, YELLOW_B, 1)
-        else
-            setMoverOpacity(root, 0)
-        end
     end
-    liveBars = hide and roots or {}
-    updateFills()
     appliedOnce = true
     return true, #roots
 end
@@ -620,14 +341,6 @@ local function delayMs(ms, fn)
         afterTicks(math.max(1, math.ceil(ms / 16.67)), fn)
     end
 end
-
-local function fillLoop()
-    if #liveBars > 0 and cfg.enabled ~= false and cfg.hideFrame ~= false then
-        pcall(updateFills)
-    end
-    delayMs(FILL_UPDATE_MS, fillLoop)
-end
-delayMs(FILL_UPDATE_MS, fillLoop)
 
 local function onBarConstructed()
     if refreshPending then
@@ -800,7 +513,7 @@ local RANGE = {
     y     = { lo = 0, hi = 1440, step = 5, int = true },
     scale = { lo = 0.5, hi = 4, step = 0.1, int = false },
 }
-local DEFAULTS = { x = 520, y = 0, scale = 2, enabled = true, hideFrame = true, showBorder = true, key = "F8" }
+local DEFAULTS = { x = 520, y = 0, scale = 2, enabled = true, key = "F8" }
 
 
 local KEY_OPTIONS = {
@@ -934,8 +647,6 @@ if type(ModMenu) == "table" then
                 x = (type(x) == "number") and math.floor(x + 0.5) or 0,
                 y = (type(y) == "number") and math.floor(y + 0.5) or 0,
                 scale = (type(s) == "number" and s > 0) and s or 1,
-                hideFrame = ModMenu.Get(SEC, "hideFrame") ~= false,
-                showBorder = ModMenu.Get(SEC, "showBorder") ~= false,
             }
         end
 
@@ -945,8 +656,6 @@ if type(ModMenu) == "table" then
             cfg.x = v.x
             cfg.y = v.y
             cfg.scale = v.scale
-            cfg.hideFrame = v.hideFrame
-            cfg.showBorder = v.showBorder
             ExecuteInGameThread(function()
                 local pcallOk, success, nRoots = pcall(doOneShot, "apply")
                 if pcallOk and success then
@@ -978,8 +687,6 @@ if type(ModMenu) == "table" then
             fieldln("y", tostring(cfg.y or 0))
             fieldln("scale", string.format("%g", (type(cfg.scale) == "number" and cfg.scale > 0) and cfg.scale or 1))
             fieldln("key", string.format('"%s"', cfg.key or "F8"))
-            fieldln("hideFrame", (cfg.hideFrame and "true" or "false"))
-            fieldln("showBorder", (cfg.showBorder ~= false and "true" or "false"))
             fieldln("lang", string.format('"%s"', uiLang))
             f:write("}\n")
             f:close()
@@ -1036,8 +743,6 @@ if type(ModMenu) == "table" then
             pcall(ModMenu.Set, SEC, "y", DEFAULTS.y)
             pcall(ModMenu.Set, SEC, "scale", DEFAULTS.scale)
             pcall(ModMenu.Set, SEC, "enabled", DEFAULTS.enabled)
-            pcall(ModMenu.Set, SEC, "hideFrame", DEFAULTS.hideFrame)
-            pcall(ModMenu.Set, SEC, "showBorder", DEFAULTS.showBorder)
             onApply()
             pcall(ModMenu.Set, SEC_KEY, "key", DEFAULTS.key)
             if (cfg.key or "F8") ~= DEFAULTS.key then
@@ -1149,8 +854,6 @@ if type(ModMenu) == "table" then
                     { type = "label", label = T("tip") },
                     { type = "label", id = "hpStatus", label = T("st_wait") },
                     { type = "checkbox", id = "enabled", label = T("chk_enabled"), default = cfg.enabled ~= false },
-                    { type = "checkbox", id = "hideFrame", label = T("chk_hideFrame"), default = cfg.hideFrame ~= false },
-                    { type = "checkbox", id = "showBorder", label = T("chk_showBorder"), default = cfg.showBorder ~= false },
                     {
                         type = "row",
                         items = {
